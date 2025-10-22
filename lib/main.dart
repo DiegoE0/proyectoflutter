@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Flutter code sample for [AppBar].
+/// Flutter code sample for [AppBar] with dynamic color, SnackBar, and Switch.
 
-List<String> titles = <String>['Cloud', 'Beach', 'Sunny'];
+final List<int> _items = List<int>.generate(51, (int index) => index);
 
 void main() => runApp(const AppBarApp());
 
@@ -12,82 +12,152 @@ class AppBarApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(colorSchemeSeed: const Color(0xff6750a4)),
+      debugShowCheckedModeBanner: false, // Quita el banner de debug
+      theme: ThemeData(
+        colorSchemeSeed: const Color(0xff00BCD4),
+      ), // Cambiado a un nuevo color (cian)
       home: const AppBarExample(),
     );
   }
 }
 
-class AppBarExample extends StatelessWidget {
+class AppBarExample extends StatefulWidget {
   const AppBarExample({super.key});
+
+  @override
+  State<AppBarExample> createState() => _AppBarExampleState();
+}
+
+class _AppBarExampleState extends State<AppBarExample> {
+  bool shadowColor = false;
+  double? scrolledUnderElevation;
+  Color appBarColor = const Color.fromARGB(255, 141, 181, 213);
+  final List<Color> _colors = [
+    Colors.blue,
+    Colors.green,
+    Colors.red,
+    Colors.purple,
+    Colors.orange,
+    Colors.teal,
+    Colors.indigo,
+    Colors.pink,
+    Colors.amber,
+    Colors.cyan,
+    Colors.lime,
+    Colors.deepOrange,
+    Colors.brown,
+    Colors.grey,
+    Colors.blueGrey,
+  ];
+  int _currentColorIndex = 0;
+
+  void _changeAppBarColor() {
+    setState(() {
+      _currentColorIndex = (_currentColorIndex + 1) % _colors.length;
+      appBarColor = _colors[_currentColorIndex];
+    });
+  }
+
+  void _showElevationSnackBar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'scrolledUnderElevation: ${scrolledUnderElevation ?? 'default'}',
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
     final Color oddItemColor = colorScheme.primary.withOpacity(0.05);
     final Color evenItemColor = colorScheme.primary.withOpacity(0.15);
-    const int tabsCount = 3;
 
-    return DefaultTabController(
-      initialIndex: 1,
-      length: tabsCount,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('AppBar Sample'),
-          // This check specifies which nested Scrollable's scroll notification
-          // should be listened to.
-          //
-          // When `ThemeData.useMaterial3` is true and scroll view has
-          // scrolled underneath the app bar, this updates the app bar
-          // background color and elevation.
-          //
-          // This sets `notification.depth == 1` to listen to the scroll
-          // notification from the nested `ListView.builder`.
-          notificationPredicate: (ScrollNotification notification) {
-            return notification.depth == 1;
-          },
-          // The elevation value of the app bar when scroll view has
-          // scrolled underneath the app bar.
-          scrolledUnderElevation: 4.0,
-          shadowColor: Theme.of(context).shadowColor,
-          bottom: TabBar(
-            tabs: <Widget>[
-              Tab(icon: const Icon(Icons.cloud_outlined), text: titles[0]),
-              Tab(icon: const Icon(Icons.beach_access_sharp), text: titles[1]),
-              Tab(icon: const Icon(Icons.brightness_5_sharp), text: titles[2]),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('AppBar Demo'),
+        scrolledUnderElevation: scrolledUnderElevation,
+        shadowColor: shadowColor ? Theme.of(context).colorScheme.shadow : null,
+        backgroundColor: appBarColor,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.color_lens),
+            tooltip: 'Change AppBar Color',
+            onPressed: _changeAppBarColor,
+          ),
+        ],
+      ),
+      body: GridView.builder(
+        itemCount: _items.length,
+        padding: const EdgeInsets.all(8.0),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          childAspectRatio: 2.0,
+          mainAxisSpacing: 10.0,
+          crossAxisSpacing: 10.0,
+        ),
+        itemBuilder: (BuildContext context, int index) {
+          if (index == 0) {
+            return Center(
+              child: Text(
+                'Scroll to see the Appbar in effect.',
+                style: Theme.of(context).textTheme.labelLarge,
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
+          return Container(
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20.0),
+              color: _items[index].isOdd ? oddItemColor : evenItemColor,
+            ),
+            child: Text('Item $index'),
+          );
+        },
+      ),
+      bottomNavigationBar: BottomAppBar(
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: OverflowBar(
+            overflowAlignment: OverflowBarAlignment.center,
+            alignment: MainAxisAlignment.center,
+            overflowSpacing: 5.0,
+            children: <Widget>[
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Shadow Color'),
+                  Switch(
+                    value: shadowColor,
+                    onChanged: (bool value) {
+                      setState(() {
+                        shadowColor = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(width: 5),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    if (scrolledUnderElevation == null) {
+                      scrolledUnderElevation = 4.0;
+                    } else {
+                      scrolledUnderElevation = scrolledUnderElevation! + 1.0;
+                    }
+                    _showElevationSnackBar();
+                  });
+                },
+                child: Text(
+                  'scrolledUnderElevation: ${scrolledUnderElevation ?? 'default'}',
+                ),
+              ),
             ],
           ),
-        ),
-        body: TabBarView(
-          children: <Widget>[
-            ListView.builder(
-              itemCount: 25,
-              itemBuilder: (BuildContext context, int index) {
-                return ListTile(
-                  tileColor: index.isOdd ? oddItemColor : evenItemColor,
-                  title: Text('${titles[0]} $index'),
-                );
-              },
-            ),
-            ListView.builder(
-              itemCount: 25,
-              itemBuilder: (BuildContext context, int index) {
-                return ListTile(
-                  tileColor: index.isOdd ? oddItemColor : evenItemColor,
-                  title: Text('${titles[1]} $index'),
-                );
-              },
-            ),
-            ListView.builder(
-              itemCount: 25,
-              itemBuilder: (BuildContext context, int index) {
-                return ListTile(
-                  tileColor: index.isOdd ? oddItemColor : evenItemColor,
-                  title: Text('${titles[2]} $index'),
-                );
-              },
-            ),
-          ],
         ),
       ),
     );
