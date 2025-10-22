@@ -1,117 +1,162 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+/// Flutter code sample for [AppBar] with dynamic color, SnackBar, and Switch.
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+final List<int> _items = List<int>.generate(51, (int index) => index);
 
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
+void main() => runApp(const AppBarApp());
 
-class _MyAppState extends State<MyApp> {
-  // Estado inicial: tema claro
-  ThemeMode _themeMode = ThemeMode.light;
-
-  // Cambia entre claro y oscuro
-  void _toggleTheme() {
-    setState(() {
-      _themeMode = _themeMode == ThemeMode.light
-          ? ThemeMode.dark
-          : ThemeMode.light;
-    });
-  }
+class AppBarApp extends StatelessWidget {
+  const AppBarApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Tema Claro y Oscuro',
-      debugShowCheckedModeBanner: false,
-
-      // ☀️ Tema claro
+      debugShowCheckedModeBanner: false, // Quita el banner de debug
       theme: ThemeData(
-        brightness: Brightness.light,
-        colorScheme: const ColorScheme.light(
-          primary: Color.fromARGB(255, 43, 5, 5),
-          onPrimary: Color.fromARGB(255, 255, 223, 40),
-          background: Color.fromARGB(255, 110, 13, 86),
-          onBackground: Color(0xFF1C1B1F),
-        ),
-        useMaterial3: true,
-      ),
-
-      // 🌙 Tema oscuro
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFD0BCFF),
-          onPrimary: Color.fromARGB(255, 62, 3, 77),
-          background: Color(0xFF1C1B1F),
-          onBackground: Color.fromARGB(255, 48, 42, 139),
-        ),
-        useMaterial3: true,
-      ),
-
-      // Tema actual
-      themeMode: _themeMode,
-
-      home: MyHomePage(
-        onToggleTheme: _toggleTheme,
-        isDarkMode: _themeMode == ThemeMode.dark,
-      ),
+        colorSchemeSeed: const Color(0xff00BCD4),
+      ), // Cambiado a un nuevo color (cian)
+      home: const AppBarExample(),
     );
   }
 }
 
-class MyHomePage extends StatelessWidget {
-  final VoidCallback onToggleTheme;
-  final bool isDarkMode;
+class AppBarExample extends StatefulWidget {
+  const AppBarExample({super.key});
 
-  const MyHomePage({
-    super.key,
-    required this.onToggleTheme,
-    required this.isDarkMode,
-  });
+  @override
+  State<AppBarExample> createState() => _AppBarExampleState();
+}
+
+class _AppBarExampleState extends State<AppBarExample> {
+  bool shadowColor = false;
+  double? scrolledUnderElevation;
+  Color appBarColor = const Color.fromARGB(255, 141, 181, 213);
+  final List<Color> _colors = [
+    Colors.blue,
+    Colors.green,
+    Colors.red,
+    Colors.purple,
+    Colors.orange,
+    Colors.teal,
+    Colors.indigo,
+    Colors.pink,
+    Colors.amber,
+    Colors.cyan,
+    Colors.lime,
+    Colors.deepOrange,
+    Colors.brown,
+    Colors.grey,
+    Colors.blueGrey,
+  ];
+  int _currentColorIndex = 0;
+
+  void _changeAppBarColor() {
+    setState(() {
+      _currentColorIndex = (_currentColorIndex + 1) % _colors.length;
+      appBarColor = _colors[_currentColorIndex];
+    });
+  }
+
+  void _showElevationSnackBar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'scrolledUnderElevation: ${scrolledUnderElevation ?? 'default'}',
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context).colorScheme;
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    final Color oddItemColor = colorScheme.primary.withOpacity(0.05);
+    final Color evenItemColor = colorScheme.primary.withOpacity(0.15);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isDarkMode ? "🌙 Tema Oscuro" : "☀️ Tema Claro"),
-        backgroundColor: theme.primary,
-        foregroundColor: theme.onPrimary,
+        title: const Text('AppBar Demo'),
+        scrolledUnderElevation: scrolledUnderElevation,
+        shadowColor: shadowColor ? Theme.of(context).colorScheme.shadow : null,
+        backgroundColor: appBarColor,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.color_lens),
+            tooltip: 'Change AppBar Color',
+            onPressed: _changeAppBarColor,
+          ),
+        ],
       ),
-      body: Center(
-        child: ElevatedButton.icon(
-          onPressed: onToggleTheme,
-
-          // 🌟 Ícono animado
-          icon: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 1000),
-            transitionBuilder: (child, animation) => RotationTransition(
-              turns: Tween(begin: 0.75, end: 1.0).animate(animation),
-              child: FadeTransition(opacity: animation, child: child),
+      body: GridView.builder(
+        itemCount: _items.length,
+        padding: const EdgeInsets.all(8.0),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          childAspectRatio: 2.0,
+          mainAxisSpacing: 10.0,
+          crossAxisSpacing: 10.0,
+        ),
+        itemBuilder: (BuildContext context, int index) {
+          if (index == 0) {
+            return Center(
+              child: Text(
+                'Scroll to see the Appbar in effect.',
+                style: Theme.of(context).textTheme.labelLarge,
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
+          return Container(
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20.0),
+              color: _items[index].isOdd ? oddItemColor : evenItemColor,
             ),
-            child: Icon(
-              isDarkMode ? Icons.wb_sunny : Icons.nightlight_round,
-              key: ValueKey<bool>(isDarkMode),
-              size: 32,
-            ),
-          ),
-
-          // Texto dinámico
-          label: Text(
-            isDarkMode ? "Cambiar a modo claro" : "Cambiar a modo oscuro",
-          ),
-
-          style: ElevatedButton.styleFrom(
-            backgroundColor: theme.primary,
-            foregroundColor: theme.onPrimary,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Text('Item $index'),
+          );
+        },
+      ),
+      bottomNavigationBar: BottomAppBar(
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: OverflowBar(
+            overflowAlignment: OverflowBarAlignment.center,
+            alignment: MainAxisAlignment.center,
+            overflowSpacing: 5.0,
+            children: <Widget>[
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Shadow Color'),
+                  Switch(
+                    value: shadowColor,
+                    onChanged: (bool value) {
+                      setState(() {
+                        shadowColor = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(width: 5),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    if (scrolledUnderElevation == null) {
+                      scrolledUnderElevation = 4.0;
+                    } else {
+                      scrolledUnderElevation = scrolledUnderElevation! + 1.0;
+                    }
+                    _showElevationSnackBar();
+                  });
+                },
+                child: Text(
+                  'scrolledUnderElevation: ${scrolledUnderElevation ?? 'default'}',
+                ),
+              ),
+            ],
           ),
         ),
       ),
