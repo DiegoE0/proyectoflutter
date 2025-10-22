@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Flutter code sample for [AppBar].
+/// Flutter code sample for [AppBar] with dynamic color, SnackBar, and Switch.
 
 final List<int> _items = List<int>.generate(51, (int index) => index);
 
@@ -12,9 +12,9 @@ class AppBarApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(
-        colorSchemeSeed: const Color.fromARGB(255, 23, 135, 226),
-      ),
+      theme: ThemeData(colorSchemeSeed: const Color(0xff00BCD4)),
+      debugShowCheckedModeBanner:
+          false, // Añadido para quitar el banner de debug
       home: const AppBarExample(),
     );
   }
@@ -30,6 +30,67 @@ class AppBarExample extends StatefulWidget {
 class _AppBarExampleState extends State<AppBarExample> {
   bool shadowColor = false;
   double? scrolledUnderElevation;
+  Color appBarColor = Colors.blue;
+  Color scaffoldBackgroundColor = Colors.grey[200]!;
+  final List<Color> _appBarColors = [
+    Colors.blue,
+    const Color.fromARGB(255, 129, 175, 76),
+    Colors.red,
+    Colors.purple,
+    const Color.fromARGB(255, 179, 121, 34),
+    Colors.orange,
+    Colors.cyan,
+    Colors.indigo,
+    Colors.deepPurple,
+    Colors.green,
+    Colors.teal,
+    Colors.brown,
+    Colors.pink,
+    Colors.lime,
+    Colors.deepOrange,
+  ];
+  final List<Color> _scaffoldColors = [
+    Colors.grey[200]!,
+    Colors.lightGreen[200]!,
+    Colors.pink[200]!,
+    Colors.teal[200]!,
+    Colors.amber[200]!,
+    Colors.lightBlue[200]!,
+    Colors.cyan[200]!,
+    Colors.purple[200]!,
+    Colors.orange[200]!,
+    Colors.yellow[200]!,
+    Colors.red[200]!,
+    Colors.grey[300]!,
+    Colors.lime[200]!,
+    Colors.blue[200]!,
+    Colors.indigo[200]!,
+  ];
+  int _currentAppBarColorIndex = 0;
+  int _currentScaffoldColorIndex = 0;
+
+  void _changeAppBarColor(int newIndex, bool isAppBar) {
+    setState(() {
+      if (isAppBar) {
+        _currentAppBarColorIndex = newIndex;
+        appBarColor = _appBarColors[_currentAppBarColorIndex];
+      } else {
+        _currentScaffoldColorIndex = newIndex;
+        scaffoldBackgroundColor = _scaffoldColors[_currentScaffoldColorIndex];
+      }
+    });
+  }
+
+  void _showElevationSnackBar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'scrolledUnderElevation: ${scrolledUnderElevation ?? 'default'}',
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,10 +99,50 @@ class _AppBarExampleState extends State<AppBarExample> {
     final Color evenItemColor = colorScheme.primary.withOpacity(0.15);
 
     return Scaffold(
+      backgroundColor: scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('AppBar Demo'),
         scrolledUnderElevation: scrolledUnderElevation,
         shadowColor: shadowColor ? Theme.of(context).colorScheme.shadow : null,
+        backgroundColor: appBarColor,
+        actions: [
+          PopupMenuButton<int>(
+            icon: const Icon(Icons.palette, color: Colors.white),
+            tooltip: 'Cambiar color del AppBar',
+            onSelected: (int newIndex) => _changeAppBarColor(newIndex, true),
+            itemBuilder: (BuildContext context) {
+              return _appBarColors.asMap().entries.map((entry) {
+                final index = entry.key;
+                final color = entry.value;
+                return PopupMenuItem<int>(
+                  value: index,
+                  child: ListTile(
+                    leading: Container(width: 20, height: 20, color: color),
+                    title: Text('AppBar Color ${index + 1}'),
+                  ),
+                );
+              }).toList();
+            },
+          ),
+          PopupMenuButton<int>(
+            icon: const Icon(Icons.format_paint, color: Colors.white),
+            tooltip: 'Cambiar color del fondo',
+            onSelected: (int newIndex) => _changeAppBarColor(newIndex, false),
+            itemBuilder: (BuildContext context) {
+              return _scaffoldColors.asMap().entries.map((entry) {
+                final index = entry.key;
+                final color = entry.value;
+                return PopupMenuItem<int>(
+                  value: index,
+                  child: ListTile(
+                    leading: Container(width: 20, height: 20, color: color),
+                    title: Text('Scaffold Color ${index + 1}'),
+                  ),
+                );
+              }).toList();
+            },
+          ),
+        ],
       ),
       body: GridView.builder(
         itemCount: _items.length,
@@ -64,7 +165,6 @@ class _AppBarExampleState extends State<AppBarExample> {
           }
           return Container(
             alignment: Alignment.center,
-            // tileColor: _items[index].isOdd ? oddItemColor : evenItemColor,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20.0),
               color: _items[index].isOdd ? oddItemColor : evenItemColor,
@@ -81,30 +181,31 @@ class _AppBarExampleState extends State<AppBarExample> {
             alignment: MainAxisAlignment.center,
             overflowSpacing: 5.0,
             children: <Widget>[
-              ElevatedButton.icon(
-                onPressed: () {
-                  setState(() {
-                    shadowColor = !shadowColor;
-                  });
-                },
-                icon: Icon(
-                  shadowColor ? Icons.visibility_off : Icons.visibility,
-                ),
-                label: const Text('shadow color'),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Shadow Color'),
+                  Switch(
+                    value: shadowColor,
+                    onChanged: (bool value) {
+                      setState(() {
+                        shadowColor = value;
+                      });
+                    },
+                  ),
+                ],
               ),
               const SizedBox(width: 5),
               ElevatedButton(
                 onPressed: () {
-                  if (scrolledUnderElevation == null) {
-                    setState(() {
-                      // Default elevation is 3.0, increment by 1.0.
+                  setState(() {
+                    if (scrolledUnderElevation == null) {
                       scrolledUnderElevation = 4.0;
-                    });
-                  } else {
-                    setState(() {
+                    } else {
                       scrolledUnderElevation = scrolledUnderElevation! + 1.0;
-                    });
-                  }
+                    }
+                    _showElevationSnackBar();
+                  });
                 },
                 child: Text(
                   'scrolledUnderElevation: ${scrolledUnderElevation ?? 'default'}',
